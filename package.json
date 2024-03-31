@@ -1,5 +1,5 @@
 {
-  "name": "sp_dc_rf",
+  "name": "elgo-iot-plug-shelly",
   "version": "1.0.0",
   "description": "Data Collection",
   "main": "server.js",
