@@ -1,0 +1,22 @@
+{
+  "name": "sp_dc_rf",
+  "version": "1.0.0",
+  "description": "Data Collection",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-iot-device-sdk": "^2.2.13",
+    "aws-sdk": "^2.1589.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.1",
+    "fs": "^0.0.1-security",
+    "mqtt": "^5.5.0",
+    "path": "^0.12.7"
+  }
+}
