@@ -158,6 +158,295 @@ app.get("/loglightLevel", (req, res) => {
 
     const lightLevel_current = parseInt(req.query.lightLevel_current, 10);
     const lightLevel_prev = parseInt(req.query.lightLevel_prev, 10);
+
+    //Init State
+    if((lightLevel_current == lightLevel_prev)&(lightLevel_current == 0)){
+      res.json({
+        message: "Light levels retrieved successfully, no update performed",
+        currentLightLevel: globalLightLevel_current,
+        previousLightLevel: globalLightLevel_prev,
+      });
+    }
+
+    //Transformation Logic
+    if(globalLightLevel_current == 0 & globalLightLevel_prev == 0){
+       if (lightLevel_current == 1){
+        //Switch On Once
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 1;
+       } 
+       else if (lightLevel_current == 0.5){
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 0.5;
+       }
+
+       else if (lightLevel_current == 0){
+        //Do Nothing
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 0;
+       }
+
+       else if (lightLevel_current == 0.75){
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 0.75;
+       }
+    }
+
+    else if(globalLightLevel_current == 0 & globalLightLevel_prev == 0.5){
+      if (lightLevel_current == 1){
+        //Switch On Once
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 1;
+       }
+        else if (lightLevel_current == 0.5){
+          //Switch On
+  
+          //Switch Off
+  
+          //Switch On
+  
+          //Switch Off
+  
+          //Switch On
+  
+          globalLightLevel_prev = 0;
+          globalLightLevel_current = 0.5;
+        }
+  
+        else if (lightLevel_current == 0){
+          //Do Nothing
+  
+          globalLightLevel_prev = 0.5;
+          globalLightLevel_current = 0;
+        }
+  
+        else if (lightLevel_current == 0.75){
+          //Switch On
+  
+          //Switch Off
+  
+          //Switch On
+  
+          globalLightLevel_prev = 0;
+          globalLightLevel_current = 0.75;
+        }
+    }
+    else if(globalLightLevel_current == 0 & globalLightLevel_prev == 0.75){
+      if (lightLevel_current == 0.5){
+        //Switch On Once
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 0.5;
+      }
+      else if (lightLevel_current == 0){
+        //Do Nothing
+
+        globalLightLevel_prev = 0.75;
+        globalLightLevel_current = 0;
+      }
+
+      else if (lightLevel_current == 0.75){
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 0.75;
+      }
+
+      else if (lightLevel_current == 1){
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 1;
+      }
+    }
+
+    else if(globalLightLevel_current == 0 & globalLightLevel_prev == 1){
+      if (lightLevel_current == 0.5){
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 0.5;
+      }
+      else if (lightLevel_current == 0){
+        //Do Nothing
+
+        globalLightLevel_prev = 1;
+        globalLightLevel_current = 0;
+      }
+
+      else if (lightLevel_current == 0.75){
+        //Switch On
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 0.75;
+      }
+
+      else if (lightLevel_current == 1){
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 1;
+      }
+    }
+
+    else if(globalLightLevel_current == 0.5){
+      if (lightLevel_current == 1){
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 0.5;
+        globalLightLevel_current = 1;
+      }
+      else if (lightLevel_current == 0.5){
+        //Do Nothing
+
+        globalLightLevel_prev = 0.5;
+        globalLightLevel_current = 0.5;
+      }
+
+      else if (lightLevel_current == 0){
+        //Switch Off
+
+        globalLightLevel_prev = 0.5;
+        globalLightLevel_current = 0;
+      }
+
+      else if (lightLevel_current == 0.75){
+        //Switch Off
+
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 0.5;
+        globalLightLevel_current = 0.75;
+      }
+    }
+
+    else if(globalLightLevel_current == 0.75){
+      if (lightLevel_current == 1){
+        //Switch Off
+
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 0.75;
+        globalLightLevel_current = 1;
+      }
+
+      else if (lightLevel_current == 0.5){
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 0.75;
+        globalLightLevel_current = 0.5;
+      }
+
+      else if (lightLevel_current == 0){
+        //Switch Off
+
+        globalLightLevel_prev = 0.75;
+        globalLightLevel_current = 0;
+      }
+
+      else if (lightLevel_current == 0.75){
+        //Do Nothing
+
+        globalLightLevel_prev = 0.75;
+        globalLightLevel_current = 0.75;
+      }
+    }
+
+    else if(globalLightLevel_current == 1){
+      if (lightLevel_current == 1){
+        //Do Nothing
+
+        globalLightLevel_prev = 1;
+        globalLightLevel_current = 1;
+      }
+        
+      else if (lightLevel_current == 0.5){
+        //Switch Off
+
+        //Switch On
+
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 1;
+        globalLightLevel_current = 0.5;
+      }
+
+      else if (lightLevel_current == 0){
+        //Switch Off
+
+        globalLightLevel_prev = 1;
+        globalLightLevel_current = 0;
+      }
+
+      else if (lightLevel_current == 0.75){
+        //Switch Off
+
+        //Switch On
+
+        globalLightLevel_prev = 1;
+        globalLightLevel_current = 0.75;
+      }
+    }   
+
+
     if (isNaN(lightLevel_current)) {
       throw new Error("lightLevel_current must be a number");
     }
