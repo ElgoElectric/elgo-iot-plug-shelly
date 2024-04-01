@@ -4,7 +4,8 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
-
+let globalLightLevel_current = -100;
+let globalLightLevel_prev = -100;
 function formatUnixTimestamp(unixTimestamp) {
   const date = new Date(unixTimestamp * 1000); // Convert Unix timestamp to milliseconds
   const year = date.getFullYear();
@@ -142,6 +143,53 @@ app.get("/togglePower", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server started on http://localhost:${PORT}`);
+app.get("/", (req, res) => {
+  console.info("INFO: Server Started Successfully");
+  res.json({ "message:": "Welcome to Elgo Shelly Plug Server" });
+});
+app.get("/loglightLevel", (req, res) => {
+  try {
+    if (!req.query.hasOwnProperty("lightLevel_current")) {
+      throw new Error("No lightLevel_current query parameter provided");
+    }
+    if (!req.query.hasOwnProperty("lightLevel_prev")) {
+      throw new Error("No lightLevel_prev query parameter provided");
+    }
+
+    const lightLevel_current = parseInt(req.query.lightLevel_current, 10);
+    const lightLevel_prev = parseInt(req.query.lightLevel_prev, 10);
+    if (isNaN(lightLevel_current)) {
+      throw new Error("lightLevel_current must be a number");
+    }
+    if (isNaN(lightLevel_prev)) {
+      throw new Error("lightLevel_prev must be a number");
+    }
+
+    if ((lightLevel_current == -1) & (lightLevel_prev == -1)) {
+      res.json({
+        message: "Light levels retrieved successfully, no update performed",
+        currentLightLevel: globalLightLevel_current,
+        previousLightLevel: globalLightLevel_prev,
+      });
+    } else {
+      globalLightLevel_prev = lightLevel_prev;
+      globalLightLevel_current = lightLevel_current;
+
+      res.json({
+        message: "Light level updated successfully",
+        currentLightLevel: globalLightLevel_current,
+        previousLightLevel: globalLightLevel_prev,
+      });
+    }
+  } catch (error) {
+    res.status(400).json({
+      message: "Error processing request",
+      error: error.message,
+      currentLightLevel: globalLightLevel_current,
+      previousLightLevel: globalLightLevel_prev,
+    });
+  }
+});
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on ${PORT}`);
 });

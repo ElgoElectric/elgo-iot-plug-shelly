@@ -1,4 +1,3 @@
-// iotDevice.js
 const awsIot = require("aws-iot-device-sdk");
 const AWS = require("aws-sdk");
 require("dotenv").config();
