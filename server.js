@@ -26,13 +26,13 @@ function formatUnixTimestamp(unixTimestamp) {
 }
 
 const { initializeIoTDevice, publishToAwsIotTopic } = require("./mqtt_pub.js"); // Add this import statement
-initializeIoTDevice()
-  .then(() => {
-    console.log("AWS IoT Device Initialized Successfully");
-  })
-  .catch((error) => {
-    console.error("Failed to initialize AWS IoT Device:", error);
-  });
+// initializeIoTDevice()
+//   .then(() => {
+//     console.log("AWS IoT Device Initialized Successfully");
+//   })
+//   .catch((error) => {
+//     console.error("Failed to initialize AWS IoT Device:", error);
+//   });
 
 // MQTT configuration
 const PORT = process.env.PORT;
@@ -68,66 +68,82 @@ mqttClient.on("connect", () => {
   });
 });
 
-mqttClient.on("message", (topic, message) => {
-  const { deviceLabel, power, recordedTimestamp } = JSON.parse(
-    message.toString()
-  );
-  const data = {
-    deviceLabel: deviceLabel,
-    devicePower: power,
-    recordedTimestamp: formatUnixTimestamp(recordedTimestamp),
-  };
-  console.log(
-    "\n\nDevice Label:",
-    data.deviceLabel,
-    "\nPower:",
-    data.devicePower,
-    "\nTimestamp:",
-    data.recordedTimestamp
-  );
-  // Kitchen Appliance 1
-  if (topic === `elgoplug1/${process.env.IOT_TOPIC}`) {
-    try {
-      publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_1, data);
-    } catch (e) {
-      console.error("Failed to parse energy data:", e.message);
-    }
-  }
-  // Kitchen Appliance 2
-  else if (topic === `elgoplug2/${process.env.IOT_TOPIC}`) {
-    try {
-      publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_2, data);
-    } catch (e) {
-      console.error("Failed to parse energy data:", e.message);
-    }
-  }
-  // Refrigerator
-  else if (topic === `elgoplug3/${process.env.IOT_TOPIC}`) {
-    try {
-      publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_3, data);
-    } catch (e) {
-      console.error("Failed to parse energy data:", e.message);
-    }
-  }
-  // HVAC
-  else if (topic === `elgoplug4/${process.env.IOT_TOPIC}`) {
-    try {
-      publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_4, data);
-    } catch (e) {
-      console.error("Failed to parse energy data:", e.message);
-    }
-  }
-});
+function publishToShellyIotTopic(topic, message) {
+  return new Promise((resolve, reject) => {
+    mqttClient.publish(topic, message, {}, (err) => {
+      if (err) {
+        console.log("Error Publishing");
+        return reject(err); // Reject the promise on error
+      }
+      console.log("Message Published");
+      resolve(); // Resolve the promise when publishing is successful
+    });
+  });
+}
+
+// mqttClient.on("message", (topic, message) => {
+//   const { deviceLabel, power, recordedTimestamp } = JSON.parse(
+//     message.toString()
+//   );
+//   const data = {
+//     deviceLabel: deviceLabel,
+//     devicePower: power,
+//     recordedTimestamp: formatUnixTimestamp(recordedTimestamp),
+//   };
+//   console.log(
+//     "\n\nDevice Label:",
+//     data.deviceLabel,
+//     "\nPower:",
+//     data.devicePower,
+//     "\nTimestamp:",
+//     data.recordedTimestamp
+//   );
+//   // Kitchen Appliance 1
+//   if (topic === `elgoplug1/${process.env.IOT_TOPIC}`) {
+//     try {
+//       publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_1, data);
+//     } catch (e) {
+//       console.error("Failed to parse energy data:", e.message);
+//     }
+//   }
+//   // Kitchen Appliance 2
+//   else if (topic === `elgoplug2/${process.env.IOT_TOPIC}`) {
+//     try {
+//       publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_2, data);
+//     } catch (e) {
+//       console.error("Failed to parse energy data:", e.message);
+//     }
+//   }
+//   // Refrigerator
+//   else if (topic === `elgoplug3/${process.env.IOT_TOPIC}`) {
+//     try {
+//       publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_3, data);
+//     } catch (e) {
+//       console.error("Failed to parse energy data:", e.message);
+//     }
+//   }
+//   // HVAC
+//   else if (topic === `elgoplug4/${process.env.IOT_TOPIC}`) {
+//     try {
+//       publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_4, data);
+//     } catch (e) {
+//       console.error("Failed to parse energy data:", e.message);
+//     }
+//   }
+// });
 
 // Enable CORS for all routes
 app.use(cors());
 
 // Endpoint to toggle power
 app.get("/togglePower", (req, res) => {
-  const isPowerOn = req.query.isPowerOn === "true"; // Get power status from the query parameter
+  const isPowerOn = req.query.isPowerOn === "true";
   const topic = `${req.query.plugID}/command/switch:0`;
   const message = isPowerOn ? "on" : "off";
-
+  // await publishToShellyIotTopic(topic, message);
+  // res.send(
+  //   `Device connected to shelly plug:${req.query.plugID} turned ${message}`
+  // );
   mqttClient.publish(topic, message, {}, (err) => {
     if (err) {
       res
@@ -147,7 +163,8 @@ app.get("/", (req, res) => {
   console.info("INFO: Server Started Successfully");
   res.json({ "message:": "Welcome to Elgo Shelly Plug Server" });
 });
-app.get("/loglightLevel", (req, res) => {
+
+app.get("/loglightLevel", async (req, res) => {
   try {
     if (!req.query.hasOwnProperty("lightLevel_current")) {
       throw new Error("No lightLevel_current query parameter provided");
@@ -156,296 +173,352 @@ app.get("/loglightLevel", (req, res) => {
       throw new Error("No lightLevel_prev query parameter provided");
     }
 
-    const lightLevel_current = parseInt(req.query.lightLevel_current, 10);
-    const lightLevel_prev = parseInt(req.query.lightLevel_prev, 10);
+    const topic = `${req.query.plugID}/command/switch:0`;
+    const lightLevel_current = req.query.lightLevel_current;
+    const lightLevel_prev = req.query.lightLevel_prev;
 
     //Init State
-    if((lightLevel_current == lightLevel_prev)&(lightLevel_current == 0)){
-      res.json({
-        message: "Light levels retrieved successfully, no update performed",
-        currentLightLevel: globalLightLevel_current,
-        previousLightLevel: globalLightLevel_prev,
-      });
-    }
+    // if ((lightLevel_current == lightLevel_prev) & (lightLevel_current == 0)) {
+    //   // res.json({
+    //   //   message: "Light levels retrieved successfully, no update performed",
+    //   //   currentLightLevel: globalLightLevel_current,
+    //   //   previousLightLevel: globalLightLevel_prev,
+    //   // });
+    // }
 
     //Transformation Logic
-    if(globalLightLevel_current == 0 & globalLightLevel_prev == 0){
-       if (lightLevel_current == 1){
+    if ((globalLightLevel_current == 0) & (globalLightLevel_prev == 0)) {
+      if (lightLevel_current == 1) {
         //Switch On Once
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 1;
-       } 
-       else if (lightLevel_current == 0.5){
+      } else if (lightLevel_current == 0.5) {
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 0.5;
-       }
-
-       else if (lightLevel_current == 0){
+      } else if (lightLevel_current == 0) {
         //Do Nothing
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 0;
-       }
-
-       else if (lightLevel_current == 0.75){
+      } else if (lightLevel_current == 0.75) {
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
-
+        await publishToShellyIotTopic(topic, "on");
         globalLightLevel_prev = 0;
         globalLightLevel_current = 0.75;
-       }
-    }
-
-    else if(globalLightLevel_current == 0 & globalLightLevel_prev == 0.5){
-      if (lightLevel_current == 1){
+      }
+    } else if (
+      (globalLightLevel_current == 0) &
+      (globalLightLevel_prev == 0.5)
+    ) {
+      if (lightLevel_current == 1) {
         //Switch On Once
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 1;
-       }
-        else if (lightLevel_current == 0.5){
-          //Switch On
-  
-          //Switch Off
-  
-          //Switch On
-  
-          //Switch Off
-  
-          //Switch On
-  
-          globalLightLevel_prev = 0;
-          globalLightLevel_current = 0.5;
-        }
-  
-        else if (lightLevel_current == 0){
-          //Do Nothing
-  
-          globalLightLevel_prev = 0.5;
-          globalLightLevel_current = 0;
-        }
-  
-        else if (lightLevel_current == 0.75){
-          //Switch On
-  
-          //Switch Off
-  
-          //Switch On
-  
-          globalLightLevel_prev = 0;
-          globalLightLevel_current = 0.75;
-        }
-    }
-    else if(globalLightLevel_current == 0 & globalLightLevel_prev == 0.75){
-      if (lightLevel_current == 0.5){
+      } else if (lightLevel_current == 0.5) {
+        //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        //Switch On
+        await publishToShellyIotTopic(topic, "on");
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 0.5;
+      } else if (lightLevel_current == 0) {
+        //Do Nothing
+
+        globalLightLevel_prev = 0.5;
+        globalLightLevel_current = 0;
+      } else if (lightLevel_current == 0.75) {
+        //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        globalLightLevel_prev = 0;
+        globalLightLevel_current = 0.75;
+      }
+    } else if (
+      (globalLightLevel_current == 0) &
+      (globalLightLevel_prev == 0.75)
+    ) {
+      if (lightLevel_current == 0.5) {
         //Switch On Once
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 0.5;
-      }
-      else if (lightLevel_current == 0){
+      } else if (lightLevel_current == 0) {
         //Do Nothing
 
         globalLightLevel_prev = 0.75;
         globalLightLevel_current = 0;
-      }
-
-      else if (lightLevel_current == 0.75){
+      } else if (lightLevel_current == 0.75) {
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
-
+        await publishToShellyIotTopic(topic, "on");
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 0.75;
-      }
-
-      else if (lightLevel_current == 1){
+      } else if (lightLevel_current == 1) {
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 1;
       }
-    }
-
-    else if(globalLightLevel_current == 0 & globalLightLevel_prev == 1){
-      if (lightLevel_current == 0.5){
+    } else if ((globalLightLevel_current == 0) & (globalLightLevel_prev == 1)) {
+      if (lightLevel_current == 0.5) {
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 0.5;
-      }
-      else if (lightLevel_current == 0){
+      } else if (lightLevel_current == 0) {
         //Do Nothing
 
         globalLightLevel_prev = 1;
         globalLightLevel_current = 0;
-      }
-
-      else if (lightLevel_current == 0.75){
+      } else if (lightLevel_current == 0.75) {
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 0.75;
-      }
-
-      else if (lightLevel_current == 1){
+      } else if (lightLevel_current == 1) {
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
 
         globalLightLevel_prev = 0;
         globalLightLevel_current = 1;
       }
-    }
-
-    else if(globalLightLevel_current == 0.5){
-      if (lightLevel_current == 1){
+    } else if (globalLightLevel_current == 0.5) {
+      if (lightLevel_current == 1) {
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         globalLightLevel_prev = 0.5;
         globalLightLevel_current = 1;
-      }
-      else if (lightLevel_current == 0.5){
+      } else if (lightLevel_current == 0.5) {
         //Do Nothing
 
         globalLightLevel_prev = 0.5;
         globalLightLevel_current = 0.5;
-      }
-
-      else if (lightLevel_current == 0){
+      } else if (lightLevel_current == 0) {
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         globalLightLevel_prev = 0.5;
         globalLightLevel_current = 0;
-      }
-
-      else if (lightLevel_current == 0.75){
+      } else if (lightLevel_current == 0.75) {
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
 
         globalLightLevel_prev = 0.5;
         globalLightLevel_current = 0.75;
       }
-    }
-
-    else if(globalLightLevel_current == 0.75){
-      if (lightLevel_current == 1){
+    } else if (globalLightLevel_current == 0.75) {
+      if (lightLevel_current == 1) {
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
 
         globalLightLevel_prev = 0.75;
         globalLightLevel_current = 1;
-      }
-
-      else if (lightLevel_current == 0.5){
+      } else if (lightLevel_current == 0.5) {
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
 
         globalLightLevel_prev = 0.75;
         globalLightLevel_current = 0.5;
-      }
-
-      else if (lightLevel_current == 0){
+      } else if (lightLevel_current == 0) {
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         globalLightLevel_prev = 0.75;
         globalLightLevel_current = 0;
-      }
-
-      else if (lightLevel_current == 0.75){
+      } else if (lightLevel_current == 0.75) {
         //Do Nothing
 
         globalLightLevel_prev = 0.75;
         globalLightLevel_current = 0.75;
       }
-    }
-
-    else if(globalLightLevel_current == 1){
-      if (lightLevel_current == 1){
+    } else if (globalLightLevel_current == 1) {
+      if (lightLevel_current == 1) {
         //Do Nothing
 
         globalLightLevel_prev = 1;
         globalLightLevel_current = 1;
-      }
-        
-      else if (lightLevel_current == 0.5){
+      } else if (lightLevel_current == 0.5) {
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
 
         globalLightLevel_prev = 1;
         globalLightLevel_current = 0.5;
-      }
-
-      else if (lightLevel_current == 0){
+      } else if (lightLevel_current == 0) {
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         globalLightLevel_prev = 1;
         globalLightLevel_current = 0;
-      }
-
-      else if (lightLevel_current == 0.75){
+      } else if (lightLevel_current == 0.75) {
         //Switch Off
+        await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
+        await publishToShellyIotTopic(topic, "on");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         globalLightLevel_prev = 1;
         globalLightLevel_current = 0.75;
       }
-    }   
-
+    }
 
     if (isNaN(lightLevel_current)) {
       throw new Error("lightLevel_current must be a number");
