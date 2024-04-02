@@ -179,11 +179,7 @@ app.get("/loglightLevel", async (req, res) => {
 
     //Init State
     // if ((lightLevel_current == lightLevel_prev) & (lightLevel_current == 0)) {
-    //   // res.json({
-    //   //   message: "Light levels retrieved successfully, no update performed",
-    //   //   currentLightLevel: globalLightLevel_current,
-    //   //   previousLightLevel: globalLightLevel_prev,
-    //   // });
+    
     // }
 
     //Transformation Logic
@@ -533,9 +529,16 @@ app.get("/loglightLevel", async (req, res) => {
         currentLightLevel: globalLightLevel_current,
         previousLightLevel: globalLightLevel_prev,
       });
-    } else {
-      globalLightLevel_prev = lightLevel_prev;
-      globalLightLevel_current = lightLevel_current;
+    } else if ((lightLevel_current == -2) & (lightLevel_prev == -2)) {
+      globalLightLevel_prev = 0;
+      globalLightLevel_current = 0;
+      res.json({
+        message: "Light levels reset successfully",
+        currentLightLevel: globalLightLevel_current,
+        previousLightLevel: globalLightLevel_prev,
+      });
+    }
+    else {
 
       res.json({
         message: "Light level updated successfully",
