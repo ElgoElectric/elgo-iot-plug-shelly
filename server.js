@@ -130,6 +130,14 @@ mqttClient.on("message", (topic, message) => {
       console.error("Failed to parse energy data:", e.message);
     }
   }
+  // Lighting
+  else if (topic === `elgoplug5/${process.env.IOT_TOPIC}`) {
+    try {
+      publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_5, data);
+    } catch (e) {
+      console.error("Failed to parse energy data:", e.message);
+    }
+  }
 });
 
 // Enable CORS for all routes
