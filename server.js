@@ -178,9 +178,14 @@ app.get("/loglightLevel", async (req, res) => {
     const lightLevel_prev = req.query.lightLevel_prev;
 
     //Init State
-    // if ((lightLevel_current == lightLevel_prev) & (lightLevel_current == 0)) {
+    if ((lightLevel_current == lightLevel_prev) & (lightLevel_current == 0) & (globalLightLevel_current!=0)) {
+      //Switch Off
+      await publishToShellyIotTopic(topic, "off");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      globalLightLevel_current = 0;
+    }
     
-    // }
 
     //Transformation Logic
     if ((globalLightLevel_current == 0) & (globalLightLevel_prev == 0)) {
@@ -442,6 +447,7 @@ app.get("/loglightLevel", async (req, res) => {
 
         //Switch Off
         await publishToShellyIotTopic(topic, "off");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         //Switch On
         await publishToShellyIotTopic(topic, "on");
