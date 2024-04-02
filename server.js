@@ -183,6 +183,7 @@ app.get("/loglightLevel", async (req, res) => {
       await publishToShellyIotTopic(topic, "off");
       await new Promise((resolve) => setTimeout(resolve, 500));
 
+      globalLightLevel_prev = globalLightLevel_current;
       globalLightLevel_current = 0;
     }
     
