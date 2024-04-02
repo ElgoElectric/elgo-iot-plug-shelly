@@ -26,13 +26,13 @@ function formatUnixTimestamp(unixTimestamp) {
 }
 
 const { initializeIoTDevice, publishToAwsIotTopic } = require("./mqtt_pub.js"); // Add this import statement
-// initializeIoTDevice()
-//   .then(() => {
-//     console.log("AWS IoT Device Initialized Successfully");
-//   })
-//   .catch((error) => {
-//     console.error("Failed to initialize AWS IoT Device:", error);
-//   });
+initializeIoTDevice()
+  .then(() => {
+    console.log("AWS IoT Device Initialized Successfully");
+  })
+  .catch((error) => {
+    console.error("Failed to initialize AWS IoT Device:", error);
+  });
 
 // MQTT configuration
 const PORT = process.env.PORT;
@@ -81,56 +81,56 @@ function publishToShellyIotTopic(topic, message) {
   });
 }
 
-// mqttClient.on("message", (topic, message) => {
-//   const { deviceLabel, power, recordedTimestamp } = JSON.parse(
-//     message.toString()
-//   );
-//   const data = {
-//     deviceLabel: deviceLabel,
-//     devicePower: power,
-//     recordedTimestamp: formatUnixTimestamp(recordedTimestamp),
-//   };
-//   console.log(
-//     "\n\nDevice Label:",
-//     data.deviceLabel,
-//     "\nPower:",
-//     data.devicePower,
-//     "\nTimestamp:",
-//     data.recordedTimestamp
-//   );
-//   // Kitchen Appliance 1
-//   if (topic === `elgoplug1/${process.env.IOT_TOPIC}`) {
-//     try {
-//       publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_1, data);
-//     } catch (e) {
-//       console.error("Failed to parse energy data:", e.message);
-//     }
-//   }
-//   // Kitchen Appliance 2
-//   else if (topic === `elgoplug2/${process.env.IOT_TOPIC}`) {
-//     try {
-//       publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_2, data);
-//     } catch (e) {
-//       console.error("Failed to parse energy data:", e.message);
-//     }
-//   }
-//   // Refrigerator
-//   else if (topic === `elgoplug3/${process.env.IOT_TOPIC}`) {
-//     try {
-//       publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_3, data);
-//     } catch (e) {
-//       console.error("Failed to parse energy data:", e.message);
-//     }
-//   }
-//   // HVAC
-//   else if (topic === `elgoplug4/${process.env.IOT_TOPIC}`) {
-//     try {
-//       publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_4, data);
-//     } catch (e) {
-//       console.error("Failed to parse energy data:", e.message);
-//     }
-//   }
-// });
+mqttClient.on("message", (topic, message) => {
+  const { deviceLabel, power, recordedTimestamp } = JSON.parse(
+    message.toString()
+  );
+  const data = {
+    deviceLabel: deviceLabel,
+    devicePower: power,
+    recordedTimestamp: formatUnixTimestamp(recordedTimestamp),
+  };
+  console.log(
+    "\n\nDevice Label:",
+    data.deviceLabel,
+    "\nPower:",
+    data.devicePower,
+    "\nTimestamp:",
+    data.recordedTimestamp
+  );
+  // Kitchen Appliance 1
+  if (topic === `elgoplug1/${process.env.IOT_TOPIC}`) {
+    try {
+      publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_1, data);
+    } catch (e) {
+      console.error("Failed to parse energy data:", e.message);
+    }
+  }
+  // Kitchen Appliance 2
+  else if (topic === `elgoplug2/${process.env.IOT_TOPIC}`) {
+    try {
+      publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_2, data);
+    } catch (e) {
+      console.error("Failed to parse energy data:", e.message);
+    }
+  }
+  // Refrigerator
+  else if (topic === `elgoplug3/${process.env.IOT_TOPIC}`) {
+    try {
+      publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_3, data);
+    } catch (e) {
+      console.error("Failed to parse energy data:", e.message);
+    }
+  }
+  // HVAC
+  else if (topic === `elgoplug4/${process.env.IOT_TOPIC}`) {
+    try {
+      publishToAwsIotTopic(process.env.AWS_PUB_IOT_TOPIC_4, data);
+    } catch (e) {
+      console.error("Failed to parse energy data:", e.message);
+    }
+  }
+});
 
 // Enable CORS for all routes
 app.use(cors());
@@ -178,7 +178,11 @@ app.get("/loglightLevel", async (req, res) => {
     const lightLevel_prev = req.query.lightLevel_prev;
 
     //Init State
-    if ((lightLevel_current == lightLevel_prev) & (lightLevel_current == 0) & (globalLightLevel_current!=0)) {
+    if (
+      (lightLevel_current == lightLevel_prev) &
+      (lightLevel_current == 0) &
+      (globalLightLevel_current != 0)
+    ) {
       //Switch Off
       await publishToShellyIotTopic(topic, "off");
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -186,7 +190,6 @@ app.get("/loglightLevel", async (req, res) => {
       globalLightLevel_prev = globalLightLevel_current;
       globalLightLevel_current = 0;
     }
-    
 
     //Transformation Logic
     if ((globalLightLevel_current == 0) & (globalLightLevel_prev == 0)) {
@@ -544,9 +547,7 @@ app.get("/loglightLevel", async (req, res) => {
         currentLightLevel: globalLightLevel_current,
         previousLightLevel: globalLightLevel_prev,
       });
-    }
-    else {
-
+    } else {
       res.json({
         message: "Light level updated successfully",
         currentLightLevel: globalLightLevel_current,
