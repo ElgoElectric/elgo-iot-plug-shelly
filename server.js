@@ -52,6 +52,7 @@ const topics = [
   `elgoplug2/${process.env.IOT_TOPIC}`,
   `elgoplug3/${process.env.IOT_TOPIC}`,
   `elgoplug4/${process.env.IOT_TOPIC}`,
+  `elgoplug5/${process.env.IOT_TOPIC}`,
 ];
 
 mqttClient.on("connect", () => {
