@@ -8,20 +8,42 @@ AWS.config.update({
   region: process.env.AWS_IOT_REGION,
 });
 
-console.log("AWS:", process.env.AWS_IOT_ACCESS_KEY_ID);
 const s3 = new AWS.S3();
 let device;
 
+async function downloadFromS3(bucket, key) {
+  const params = {
+    Bucket: bucket,
+    Key: key,
+  };
+  return new Promise((resolve, reject) => {
+    s3.getObject(params, (err, data) => {
+      if (err) reject(err);
+      else resolve(data.Body);
+    });
+  });
+}
+
 async function initializeIoTDevice() {
-  device = awsIot.device({
-    keyPath:
-      "/Users/visshal/Elgo/elgo-iot-plug-shelly/device_certs_new/035f080b642abfd092baf164202f09e1967d1d7189fc3aca1b1d84bee86662e8-private.pem.key",
-    certPath:
-      "/Users/visshal/Elgo/elgo-iot-plug-shelly/device_certs_new/035f080b642abfd092baf164202f09e1967d1d7189fc3aca1b1d84bee86662e8-certificate.pem.crt",
-    caPath:
-      "/Users/visshal/Elgo/elgo-iot-plug-shelly/device_certs_new/AmazonRootCA1.pem",
-    clientId: "iotconsole-elgo-client-03",
-    host: "a1smcl0622itjw-ats.iot.us-east-1.amazonaws.com",
+  const privateKey = await downloadFromS3(
+    process.env.AWS_S3_BUCKET,
+    process.env.AWS_S3_PKEY
+  );
+  const certificate = await downloadFromS3(
+    process.env.AWS_S3_BUCKET,
+    process.env.AWS_S3_CERT
+  );
+  const caCertificate = await downloadFromS3(
+    process.env.AWS_S3_BUCKET,
+    process.env.AWS_S3_CA1
+  );
+
+  const device = awsIot.device({
+    privateKey: Buffer.from(privateKey),
+    clientCert: Buffer.from(certificate),
+    caCert: Buffer.from(caCertificate),
+    clientId: "iotconsole-elgo-client-06",
+    host: process.env.AWS_IOT_ENDPOINT,
   });
 
   device.on("connect", () => console.log("Connected to AWS IoT"));
